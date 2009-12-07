@@ -146,7 +146,7 @@ begin
   components := TFile.ReadAllLines(AFileName);
   for component in components do
   begin
-    if Pos('#', component) = 0 then
+    if (trim(component)<>'') and (Pos('#', component) = 0) then
     begin
       classname := LeftStr(component, Pos('=', component) - 1);
       alias := Copy(component, Pos('=', component) + 1, MaxInt);
