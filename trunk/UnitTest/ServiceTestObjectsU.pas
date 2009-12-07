@@ -43,7 +43,20 @@ type
     function GetMessage: String;
     procedure SetMessage(Value: String);
     function ObjectClassName: String;
+    class procedure Register;
   end;
+
+  TAnotherInterfacedService1 = class(TInterfacedObject, IInterfaceService1)
+  private
+    FMessage: String;
+  public
+    constructor Create;
+    function GetMessage: String;
+    procedure SetMessage(Value: String);
+    function ObjectClassName: String;
+    class procedure Register;
+  end;
+
 
   IInterfaceService2 = interface
   ['{6CADD01A-8546-49B0-AE23-F458F387484C}']
@@ -111,6 +124,9 @@ type
 
 implementation
 
+uses
+  SysUtils;
+
 { TService2 }
 
 constructor TService2.Create;
@@ -177,6 +193,11 @@ begin
   Result := ClassName;
 end;
 
+class procedure TInterfacedService1.Register;
+begin
+  //Empty
+end;
+
 procedure TInterfacedService1.SetMessage(Value: String);
 begin
   FMessage := Value;
@@ -221,5 +242,36 @@ constructor TService6.Create(Service1A, Service1B: TService1);
 begin
   inherited Create;
 end;
+
+{ TAnotherInterfacedService1 }
+
+constructor TAnotherInterfacedService1.Create;
+begin
+  inherited;
+end;
+
+function TAnotherInterfacedService1.GetMessage: String;
+begin
+  Result := FMessage + ' (from ' + ClassName + ')';
+end;
+
+function TAnotherInterfacedService1.ObjectClassName: String;
+begin
+  Result := ClassName;
+end;
+
+class procedure TAnotherInterfacedService1.Register;
+begin
+  //
+end;
+
+procedure TAnotherInterfacedService1.SetMessage(Value: String);
+begin
+  FMessage := Value + ' ' + datetimetostr(now);
+end;
+
+initialization
+  TInterfacedService1.Register;
+  TAnotherInterfacedService1.Register;
 
 end.
