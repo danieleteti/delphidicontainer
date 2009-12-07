@@ -1,27 +1,27 @@
-{**************************************************************
- Copyright (c) <2009> <Daniele Teti>
+{ **************************************************************
+  Copyright (c) <2009> <Daniele Teti>
 
- Permission is hereby granted, free of charge, to any person
- obtaining a copy of this software and associated documentation
- files (the "Software"), to deal in the Software without
- restriction, including without limitation the rights to use,
- copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following
- conditions:
+  Permission is hereby granted, free of charge, to any person
+  obtaining a copy of this software and associated documentation
+  files (the "Software"), to deal in the Software without
+  restriction, including without limitation the rights to use,
+  copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the
+  Software is furnished to do so, subject to the following
+  conditions:
 
- The above copyright notice and this permission notice shall be
- included in all copies or substantial portions of the Software.
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- OTHER DEALINGS IN THE SOFTWARE.
-****************************************************************}
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+  OTHER DEALINGS IN THE SOFTWARE.
+  **************************************************************** }
 
 unit DIContainer;
 {$SCOPEDENUMS ON}
@@ -33,6 +33,8 @@ uses
   Generics.Collections,
   RTTI,
   TypInfo,
+  ioutils,
+  strutils,
   SysUtils;
 
 type
@@ -64,6 +66,7 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    function LoadConfiguration(const AFileName: String): TDIContainer;
     function SetAlias(AQualifiedClassName, AAlias: String): TDIContainer; overload;
     function SetAlias(AClass: TClass; AAlias: String): TDIContainer; overload;
     function AddComponent(AQualifiedClassName: String;
@@ -94,7 +97,7 @@ end;
 
 destructor TDIContainer.Destroy;
 var
-  item: TPair<string,TDIContainerItem>;
+  item: TPair<string, TDIContainerItem>;
 begin
   FComponentAliases.Free;
   for item in FClasses do
@@ -135,6 +138,23 @@ begin
     raise EDIContainer.Create('Cannot find service ' + AQualifiedClassName);
 end;
 
+function TDIContainer.LoadConfiguration(const AFileName: String): TDIContainer;
+var
+  components: TStringDynArray;
+  component, classname, alias: string;
+begin
+  components := TFile.ReadAllLines(AFileName);
+  for component in components do
+  begin
+    if Pos('#', component) = 0 then
+    begin
+      classname := LeftStr(component, Pos('=', component) - 1);
+      alias := Copy(component, Pos('=', component) + 1, MaxInt);
+      AddComponent(classname).SetAlias(classname, alias);
+    end;
+  end;
+end;
+
 function TDIContainer.GetConstructor(AType: TRttiType): TRttiMethod;
 var
   methods: TArray<RTTI.TRttiMethod>;
@@ -158,7 +178,7 @@ var
 begin
   List := TList<string>.Create;
   try
-    Result := InternalGetComponent(List, AClass.UnitName + '.' + AClass.ClassName);
+    Result := InternalGetComponent(List, AClass.UnitName + '.' + AClass.classname);
   finally
     List.Free;
   end;
@@ -225,7 +245,7 @@ begin
     (not FClasses.ContainsKey(AAlias) and (not FComponentAliases.ContainsKey(AAlias))) then
     FComponentAliases.Add(AAlias, AQualifiedClassName)
   else
-    raise EDIContainer.Create('Alias is already used or is the same name of a service QualifiedClassName');
+    raise EDIContainer.CreateFmt('Alias [%s] is already used or is the same name of a service QualifiedClassName', [AAlias]);
   Result := Self;
 end;
 
@@ -236,9 +256,14 @@ var
   rtti_method: TRttiMethod;
 begin
   t := ctx.FindType(AQualifiedClassName) as TRttiInstanceType;
-  rtti_method := GetConstructor(t);
-  parameters := GetParameters(List, rtti_method.GetParameters);
-  Result := rtti_method.Invoke(t.MetaclassType, parameters).AsObject;
+  if Assigned(t) then
+  begin
+    rtti_method := GetConstructor(t);
+    parameters := GetParameters(List, rtti_method.GetParameters);
+    Result := rtti_method.Invoke(t.MetaclassType, parameters).AsObject;
+  end
+  else
+    raise EDIContainer.CreateFmt('Cannot find type [%s]',[AQualifiedClassName]);
 end;
 
 function TDIContainer.AddComponent(AQualifiedClassName: String;
@@ -262,7 +287,7 @@ end;
 
 class function DIContainerUtils.GetQualifiedClassName(AClass: TClass): String;
 begin
-  Result := AClass.UnitName + '.' + AClass.ClassName;
+  Result := AClass.UnitName + '.' + AClass.classname;
 end;
 
 destructor TDIContainerItem.Destroy;
