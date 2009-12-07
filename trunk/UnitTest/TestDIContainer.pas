@@ -46,6 +46,7 @@ type
     procedure TearDown; override;
 
   published
+    procedure TestLoadConfiguration;
     procedure TestRegisterComponentCreateNewInstance;
     procedure TestRegisterComponentSingleton;
     procedure TestGetDependentObject;
@@ -186,6 +187,17 @@ procedure TestContainer.TestGetServices;
 begin
   CheckEquals(3, DIContainer.AddComponent(TService1).AddComponent(TService2).AddComponent(TService3)
       .RegisteredComponents.Count);
+end;
+
+procedure TestContainer.TestLoadConfiguration;
+var
+  intf: IInterfaceService1;
+begin
+  DIContainer.LoadConfiguration('container.conf');
+  intf := DIContainer.GetInterfaceByAlias('myservice') as IInterfaceService1;
+  CheckNotNull(intf);
+  intf.SetMessage('hello');
+  CheckEquals('hello', intf.GetMessage);
 end;
 
 initialization
