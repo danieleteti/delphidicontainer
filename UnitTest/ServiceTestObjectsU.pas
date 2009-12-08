@@ -64,6 +64,8 @@ type
     procedure SetMessage(Value: String);
   end;
 
+  IInterfaceService6 = IInterfaceService2;
+
   TInterfacedService2 = class(TInterfacedObject, IInterfaceService2)
   private
     FMessage: String;
@@ -97,6 +99,7 @@ type
   TService3 = class
   public
     constructor Create(Service1: TService1; Service2: TService2);
+    destructor Destroy; override;
     function GetCompoundMessage: String;
   private
     FService1: TService1;
@@ -117,9 +120,20 @@ type
     constructor Create(Service4: TService4);
   end;
 
-  TService6 = class
+  TService6 = class(TInterfacedObject, IInterfaceService6)
+  private
+    FMessage: string;
+    s1: TService1;
+    s2: TService1;
   public
     constructor Create(Service1A, Service1B: TService1);
+    destructor Destroy; override;
+    function ToString: String;
+    function GetMessage: string;
+    procedure SetMessage(Value: string);
+  end;
+
+  TService7 = class(TService6)
   end;
 
 implementation
@@ -169,6 +183,11 @@ begin
   inherited Create;
   FService1 := Service1;
   FService2 := Service2;
+end;
+
+destructor TService3.Destroy;
+begin
+  inherited;
 end;
 
 function TService3.GetCompoundMessage: String;
@@ -241,6 +260,30 @@ end;
 constructor TService6.Create(Service1A, Service1B: TService1);
 begin
   inherited Create;
+  s1 := Service1A;
+  s2 := Service1B;
+end;
+
+destructor TService6.Destroy;
+begin
+  s1.Free;
+  s2.Free;
+  inherited;
+end;
+
+function TService6.GetMessage: string;
+begin
+  Result := FMessage;
+end;
+
+procedure TService6.SetMessage(Value: string);
+begin
+  FMessage := Value;
+end;
+
+function TService6.ToString: String;
+begin
+  Result := Format('This object (%d) has been built with a %s and a %s', [cardinal(self), s1.ClassName, s2.ClassName]);
 end;
 
 { TAnotherInterfacedService1 }

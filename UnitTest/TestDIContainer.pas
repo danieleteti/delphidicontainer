@@ -40,7 +40,6 @@ type
   TestContainer = class(TTestCase)
   strict private
     DIContainer: TDIContainer;
-
   public
     procedure SetUp; override;
     procedure TearDown; override;
@@ -52,11 +51,14 @@ type
     procedure TestGetDependentObject;
     procedure TestGetServices;
     procedure TestGetComponentByAlias;
+    procedure TestAddComponentWithAlias;
     procedure TestGetComponentByWrongAlias;
     procedure TestGetComponentByAliasAlreadyUsed;
     procedure TestGetComponentWithInterface;
     procedure TestRecursiveDependence;
     procedure TestSameServiceInConstructor;
+    procedure TestInitializationBlock;
+    procedure TestInitializationBlockSingleton;
   end;
 
 implementation
@@ -86,13 +88,16 @@ begin
   DIContainer.AddComponent(TService5);
   ExpectedException := EDIContainer;
   s := DIContainer.GetComponent(TService5) as TService5;
+  CheckTrue(s.ClassNameIs('TService5'));
 end;
 
 procedure TestContainer.TestRegisterComponentCreateNewInstance;
 var
   s1, s2: TService1;
 begin
-  DIContainer.AddComponent(ContainerUtils.GetQualifiedClassName(TService1), TDIContainerInitType.CreateNewInstance);
+  DIContainer.AddComponent(
+    ContainerUtils.GetQualifiedClassName(TService1),
+    TDIContainerInitType.CreateNewInstance);
   s1 := DIContainer.GetComponent(TService1) as TService1;
   s2 := DIContainer.GetComponent(TService1) as TService1;
   CheckFalse(s1 = s2);
@@ -119,6 +124,27 @@ begin
   DIContainer.AddComponent(TService6);
   ExpectedException := EDIContainer;
   s := DIContainer.GetComponent(TService6) as TService6;
+  CheckTrue(s.ClassNameIs('TService6'));
+end;
+
+procedure TestContainer.TestAddComponentWithAlias;
+var
+  srv3: TService3;
+begin
+  DIContainer
+    .AddComponent(TService1, TDIContainerInitType.Singleton)
+    .AddComponent(TService2, TDIContainerInitType.Singleton)
+    .AddComponent(TService3).SetAlias(TService1, 'service01')
+    .SetAlias(TService2, 'service02').SetAlias(TService3, 'service03');
+  // service3 is not managed by DIContainer becouse it's not a TDIContainerInitType.Singleton
+  srv3 := DIContainer.GetComponentByAlias('service03') as TService3;
+  try
+    CheckEquals('TService1', DIContainer.GetComponentByAlias('service01').ClassName);
+    CheckEquals('TService2', DIContainer.GetComponentByAlias('service02').ClassName);
+    CheckEquals('TService3', srv3.ClassName);
+  finally
+    srv3.Free;
+  end;
 end;
 
 procedure TestContainer.TestGetComponentByAlias;
@@ -155,10 +181,6 @@ begin
 end;
 
 procedure TestContainer.TestGetComponentWithInterface;
-var
-  intf1: IInterfaceService1;
-  intf2: IInterfaceService2;
-  ctx: TRttiContext;
 begin
   DIContainer.AddComponent(TInterfacedService1).SetAlias(TInterfacedService1, 'myintf1').AddComponent
     (TInterfacedService2).SetAlias(TInterfacedService2, 'myintf2');
@@ -187,6 +209,51 @@ procedure TestContainer.TestGetServices;
 begin
   CheckEquals(3, DIContainer.AddComponent(TService1).AddComponent(TService2).AddComponent(TService3)
       .RegisteredComponents.Count);
+end;
+
+procedure TestContainer.TestInitializationBlock;
+var
+  srv1, srv2: TService1;
+begin
+  DIContainer.AddComponent(
+    ContainerUtils.GetQualifiedClassName(TService1),
+    function: TObject
+    begin
+      Result := TService1.Create;
+    end,
+    '',
+    TDIContainerInitType.CreateNewInstance
+    );
+  DIContainer.SetAlias(ContainerUtils.GetQualifiedClassName(TService1), 'service1');
+  srv1 := DIContainer.GetComponentByAlias('service1') as TService1;
+  CheckIs(srv1, TService1);
+  srv2 := DIContainer.GetComponentByAlias('service1') as TService1;
+  CheckTrue(srv1 <> srv2);
+  srv1.Free;
+  srv2.Free;
+
+end;
+
+procedure TestContainer.TestInitializationBlockSingleton;
+var
+  srv1, srv2: TService1;
+begin
+  DIContainer.AddComponent(
+    ContainerUtils.GetQualifiedClassName(TService1),
+    function: TObject
+    begin
+      Result := TService1.Create;
+      TService1(Result).Message := DateTimeToStr(now);
+    end,
+    '',
+    TDIContainerInitType.Singleton
+    );
+  DIContainer.SetAlias(ContainerUtils.GetQualifiedClassName(TService1), 'service1');
+  srv1 := DIContainer.GetComponentByAlias('service1') as TService1;
+  CheckIs(srv1, TService1);
+  srv2 := DIContainer.GetComponentByAlias('service1') as TService1;
+  CheckTrue(srv1 = srv2);
+  CheckTrue(srv1.Message = srv2.Message);
 end;
 
 procedure TestContainer.TestLoadConfiguration;
