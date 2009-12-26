@@ -20,6 +20,7 @@
 			<Base>true</Base>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_ExeOutput>..\bin</DCC_ExeOutput>
 			<DCC_DependencyCheckOutputName>..\bin\Test01.exe</DCC_DependencyCheckOutputName>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
@@ -27,8 +28,6 @@
 			<DCC_Inlining>off</DCC_Inlining>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
 			<DCC_Platform>x86</DCC_Platform>
-			<DCC_Optimize>false</DCC_Optimize>
-			<DCC_DebugDCUs>true</DCC_DebugDCUs>
 			<DCC_K>false</DCC_K>
 			<DCC_N>false</DCC_N>
 			<DCC_S>false</DCC_S>
