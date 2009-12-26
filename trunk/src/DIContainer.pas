@@ -58,6 +58,7 @@ type
   private
     cs: TCriticalSection;
     ctx: TRttiContext;
+    FFreeStack: TStack<TDIContainerItem>;
     FClasses: TDictionary<string, TDIContainerItem>;
     FComponentAliases: TDictionary<string, string>;
     function HasCustomInitializationBlock(AQualifiedClassName: string;
@@ -130,21 +131,32 @@ begin
   inherited;
   cs := TCriticalSection.Create;
   FClasses := TDictionary<string, TDIContainerItem>.Create;
+  FFreeStack := TStack<TDIContainerItem>.Create;
   FComponentAliases := TDictionary<string, string>.Create;
 end;
 
 destructor TDIContainer.Destroy;
 var
-  item: TPair<string, TDIContainerItem>;
+//  item: TPair<string, TDIContainerItem>;
+  item: TDIContainerItem;
 begin
   FComponentAliases.Free;
-  for item in FClasses do
+
+  while FFreeStack.Count > 0 do
   begin
-  {todo: "Non deve essere un dizionario perché devo eliminare gli oggetti nellordine inverso al quale sono stati creati"}
-    WriteLn(item.Value.FSingletonInstance.ClassName);
-    item.Value.Free;
+    item := FFreeStack.Pop;
+    item.FSingletonInstance.Free;
+    item.Free;
   end;
+
+//  for item in FFreeStack do
+//  begin
+//  {todo: "Non deve essere un dizionario perché devo eliminare gli oggetti nellordine inverso al quale sono stati creati"}
+//    WriteLn(item.Value.FSingletonInstance.ClassName);
+//    item.Value.Free;
+//  end;
   FClasses.Free;
+  FFreeStack.Free;
   cs.Free;
   inherited;
 end;
@@ -160,7 +172,7 @@ begin
     if ContType.FInitType = TDIContainerInitType.CreateNewInstance then
     begin
       if AList.Contains(AQualifiedClassName) then
-        raise EDIContainer.CreateFmt('Ciclic dependecies for [%s]',
+        raise EDIContainer.CreateFmt('Ciclic dependecies for [%s]. Probably you have got also a memory leak now.',
           [AQualifiedClassName]);
       AList.Add(AQualifiedClassName);
       Result := CreateObjectWithDependencies(AList, AQualifiedClassName);
@@ -326,11 +338,14 @@ end;
 function TDIContainer.AddComponent(AQualifiedClassName: String;
   AnInitializationBlock: TFunc<TObject>; AAlias: String;
   AContainerInitType: TDIContainerInitType): TDIContainer;
+var
+  item: TDIContainerItem;
 begin
   if not FClasses.ContainsKey(AQualifiedClassName) then
   begin
-    FClasses.Add(AQualifiedClassName, TDIContainerItem.Create
-        (AContainerInitType, AnInitializationBlock));
+    item := TDIContainerItem.Create(AContainerInitType, AnInitializationBlock);
+    FClasses.Add(AQualifiedClassName, item);
+    FFreeStack.Push(item);
     if AAlias <> EmptyStr then
       SetAlias(AQualifiedClassName, AAlias);
   end
@@ -426,8 +441,8 @@ begin
       else
         raise EDIContainer.CreateFmt('Service [%s] still had [%d] references, cannot free it', [DIContainerUtils.GetQualifiedClassName(FSingletonInstance.ClassType), TInterfacedObject(FSingletonInstance).RefCount]);
     end
-    else
-      FSingletonInstance.Free;
+//    else
+//      FSingletonInstance.Free;
   end;
   FCustomInitializationBlock := nil;
   inherited;

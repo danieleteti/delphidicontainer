@@ -122,9 +122,15 @@ var
 begin
   DIContainer.AddComponent(TService1);
   DIContainer.AddComponent(TService6);
-  ExpectedException := EDIContainer;
-  s := DIContainer.GetComponent(TService6) as TService6;
-  CheckTrue(s.ClassNameIs('TService6'));
+  try
+    s := DIContainer.GetComponent(TService6) as TService6;
+  except
+    on E: Exception do
+    begin
+      CheckIs(E, EDIContainer);
+      CheckEquals(1, Pos('Ciclic', E.Message));
+    end;
+  end;
 end;
 
 procedure TestContainer.TestAddComponentWithAlias;
