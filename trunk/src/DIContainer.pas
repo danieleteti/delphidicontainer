@@ -1,4 +1,8 @@
-{ **************************************************************
+//@author Daniele Teti - http://www.danieleteti.it
+//@version 0.1
+
+{ @license
+  **************************************************************
   Copyright (c) <2009> <Daniele Teti>
 
   Permission is hereby granted, free of charge, to any person
@@ -39,21 +43,38 @@ uses
   SyncObjs;
 
 type
+  //Specific DIContainer Exception
   EDIContainer = class(Exception)
   end;
 
+  {Kind of Initialiazation type.
+   Singleton: Every service is created only one and will be freed by DIContainer
+   CreateNewInstance: Every call create new object}
   TDIContainerInitType = (Singleton, CreateNewInstance);
 
+  //Internal Container item class containing every information and code about services
   TDIContainerItem = class
-  public
+  private
+    procedure SetCustomInitializationBlock(const Value: TFunc<TObject>);
+    procedure SetInitType(const Value: TDIContainerInitType);
+    procedure SetSingletonInstance(const Value: TObject);
+  protected
     FCustomInitializationBlock: TFunc<TObject>;
     FSingletonInstance: TObject;
     FInitType: TDIContainerInitType;
+  public
     constructor Create(AInitType: TDIContainerInitType;
       AInitializationBlock: TFunc<TObject>);
     destructor Destroy; override;
+    property CustomInitializationBlock
+      : TFunc<TObject>read FCustomInitializationBlock write
+      SetCustomInitializationBlock;
+    property SingletonInstance: TObject read FSingletonInstance write
+      SetSingletonInstance;
+    property InitType: TDIContainerInitType read FInitType write SetInitType;
   end;
 
+  //The Container where you suld register (AddComponent) and retrieve (Get*) your service
   TDIContainer = class
   private
     cs: TCriticalSection;
@@ -65,14 +86,12 @@ type
       out AInitBlock: TFunc<TObject>): boolean;
     function CreateObjectWithDependencies(List: TList<string>;
       AQualifiedClassName: string): TObject;
-
   protected
     function GetConstructor(AType: TRttiType): TRttiMethod;
     function GetParameters(List: TList<string>;
       AConstructorParameters: TArray<TRttiParameter>): TArray<TValue>;
     function InternalGetComponent(AList: TList<string>;
       AQualifiedClassName: String): TObject; overload;
-
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -101,21 +120,27 @@ type
     function AddComponent(AClass: TClass; AAlias: String;
       AContainerInitType: TDIContainerInitType =
         TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
-
+    //Return a component as TObject.
     function Get(AAlias: String): TObject; overload;
     function Get(AClass: TClass): TObject; overload;
     function GetComponentByAlias(AAlias: String): TObject;
-    function GetInterfaceByAlias(AAlias: String): IInterface;
     function GetComponent(AClass: TClass): TObject; overload;
     function GetComponent(AQualifiedClassName: String): TObject; overload;
     function RegisteredComponents: TDictionary<string, TDIContainerItem>;
   end;
 
+  { @description Utils methods }
   DIContainerUtils = class
+    {
+     @description QualifiedClassName from class name
+    }
     class function GetQualifiedClassName(AClass: TClass): String;
   end;
 
 implementation
+
+uses
+  Windows;
 
 { Container }
 
@@ -137,24 +162,12 @@ end;
 
 destructor TDIContainer.Destroy;
 var
-//  item: TPair<string, TDIContainerItem>;
-  item: TDIContainerItem;
+  PairItem: TPair<string, TDIContainerItem>;
+  Item: TDIContainerItem;
 begin
   FComponentAliases.Free;
-
   while FFreeStack.Count > 0 do
-  begin
-    item := FFreeStack.Pop;
-    item.FSingletonInstance.Free;
-    item.Free;
-  end;
-
-//  for item in FFreeStack do
-//  begin
-//  {todo: "Non deve essere un dizionario perché devo eliminare gli oggetti nellordine inverso al quale sono stati creati"}
-//    WriteLn(item.Value.FSingletonInstance.ClassName);
-//    item.Value.Free;
-//  end;
+    FFreeStack.Pop.Free;
   FClasses.Free;
   FFreeStack.Free;
   cs.Free;
@@ -166,13 +179,15 @@ function TDIContainer.InternalGetComponent(AList: TList<string>;
 var
   ContType: TDIContainerItem;
 begin
+  OutputDebugString(PChar('Getting: ' + AQualifiedClassName));
   if FClasses.ContainsKey(AQualifiedClassName) then
   begin
     ContType := FClasses[AQualifiedClassName];
     if ContType.FInitType = TDIContainerInitType.CreateNewInstance then
     begin
       if AList.Contains(AQualifiedClassName) then
-        raise EDIContainer.CreateFmt('Ciclic dependecies for [%s]. Probably you have got also a memory leak now.',
+        raise EDIContainer.CreateFmt(
+          'Ciclic dependecies for [%s]. Probably you have got also a memory leak now.',
           [AQualifiedClassName]);
       AList.Add(AQualifiedClassName);
       Result := CreateObjectWithDependencies(AList, AQualifiedClassName);
@@ -239,19 +254,14 @@ begin
     ('Cannot find constructor for type ' + AType.ToString);
 end;
 
-function TDIContainer.GetInterfaceByAlias(AAlias: String): IInterface;
-begin
-  Result := GetComponentByAlias(AAlias) as TInterfacedObject;
-end;
-
 function TDIContainer.GetComponent(AClass: TClass): TObject;
 var
   List: TList<string>;
 begin
   List := TList<string>.Create;
   try
-    Result := InternalGetComponent
-      (List, AClass.UnitName + '.' + AClass.classname);
+    Result := InternalGetComponent(List,
+      AClass.UnitName + '.' + AClass.classname);
   finally
     List.Free;
   end;
@@ -339,18 +349,19 @@ function TDIContainer.AddComponent(AQualifiedClassName: String;
   AnInitializationBlock: TFunc<TObject>; AAlias: String;
   AContainerInitType: TDIContainerInitType): TDIContainer;
 var
-  item: TDIContainerItem;
+  Item: TDIContainerItem;
 begin
   if not FClasses.ContainsKey(AQualifiedClassName) then
   begin
-    item := TDIContainerItem.Create(AContainerInitType, AnInitializationBlock);
-    FClasses.Add(AQualifiedClassName, item);
-    FFreeStack.Push(item);
+    Item := TDIContainerItem.Create(AContainerInitType, AnInitializationBlock);
+    FClasses.Add(AQualifiedClassName, Item);
+    FFreeStack.Push(Item);
     if AAlias <> EmptyStr then
       SetAlias(AQualifiedClassName, AAlias);
   end
   else
-    raise EDIContainer.CreateFmt('Service already registered [%s]', [AQualifiedClassName]);
+    raise EDIContainer.CreateFmt('Service already registered [%s]',
+      [AQualifiedClassName]);
   Result := Self;
 end;
 
@@ -391,6 +402,7 @@ begin
   begin
     if not HasCustomInitializationBlock(AQualifiedClassName, InitBlock) then
     begin
+      // InitBlock := nil;
       rtti_method := GetConstructor(T);
       parameters := GetParameters(List, rtti_method.GetParameters);
       Result := rtti_method.Invoke(T.MetaclassType, parameters).AsObject;
@@ -398,12 +410,12 @@ begin
     else
     begin
       Result := InitBlock();
-      InitBlock := nil;
+      // InitBlock := nil;
     end;
   end
   else
-    raise EDIContainer.CreateFmt
-      ('Cannot find type [%s]', [AQualifiedClassName]);
+    raise EDIContainer.CreateFmt('Cannot find type [%s]',
+      [AQualifiedClassName]);
 end;
 
 function TDIContainer.AddComponent(AQualifiedClassName: String; AAlias: String;
@@ -432,6 +444,7 @@ end;
 
 destructor TDIContainerItem.Destroy;
 begin
+  FCustomInitializationBlock := nil;
   if Assigned(FSingletonInstance) then
   begin
     if FSingletonInstance is TInterfacedObject then
@@ -439,13 +452,32 @@ begin
       if TInterfacedObject(FSingletonInstance).RefCount <= 1 then
         FSingletonInstance := nil
       else
-        raise EDIContainer.CreateFmt('Service [%s] still had [%d] references, cannot free it', [DIContainerUtils.GetQualifiedClassName(FSingletonInstance.ClassType), TInterfacedObject(FSingletonInstance).RefCount]);
+        raise EDIContainer.CreateFmt(
+          'Singleton service [%s] still had [%d] references, cannot free it',
+          [DIContainerUtils.GetQualifiedClassName
+            (FSingletonInstance.ClassType),
+          TInterfacedObject(FSingletonInstance).RefCount]);
     end
-//    else
-//      FSingletonInstance.Free;
+    else
+      FSingletonInstance.Free;
   end;
-  FCustomInitializationBlock := nil;
   inherited;
+end;
+
+procedure TDIContainerItem.SetCustomInitializationBlock
+  (const Value: TFunc<TObject>);
+begin
+  FCustomInitializationBlock := Value;
+end;
+
+procedure TDIContainerItem.SetInitType(const Value: TDIContainerInitType);
+begin
+  FInitType := Value;
+end;
+
+procedure TDIContainerItem.SetSingletonInstance(const Value: TObject);
+begin
+  FSingletonInstance := Value;
 end;
 
 end.

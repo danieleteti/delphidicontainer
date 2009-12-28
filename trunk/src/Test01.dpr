@@ -2,6 +2,7 @@ program Test01;
 {$APPTYPE CONSOLE}
 
 uses
+  FastMM4,
   SysUtils,
   DIContainer in 'DIContainer.pas',
   ServiceTestObjectsU in '..\UnitTest\ServiceTestObjectsU.pas';
@@ -12,19 +13,20 @@ var
   s2: TService2;
   s3: TService3;
   s6: TService6;
-  intf7: IInterfaceService6;
+  s7: TService7;
 begin
   ReportMemoryLeaksOnShutdown := True;
   try
     DIContainer := TDIContainer.Create;
     try
-      // AddComponent with TClass with Default InitType (CreateNewInstance)
+      // AddComponent with TClass with and   InitType = Singleton
       DIContainer.AddComponent(TService1, TDIContainerInitType.Singleton);
-      // AddComponent with QualifiedName and InitType = CreateNewInstance
-      DIContainer.AddComponent('ServiceTestObjectsU.TService2', TDIContainerInitType.Singleton);
       // AddComponent with QualifiedName and InitType = Singleton
-      DIContainer.AddComponent('ServiceTestObjectsU.TService3',
+      DIContainer.AddComponent('ServiceTestObjectsU.TService2',
         TDIContainerInitType.Singleton);
+      // AddComponent with QualifiedName and InitType = CreateNewInstance
+      DIContainer.AddComponent('ServiceTestObjectsU.TService3',
+        TDIContainerInitType.CreateNewInstance);
 
       // GetComponent with QualifiedName
       s1 := DIContainer.GetComponent('ServiceTestObjectsU.TService1')
@@ -43,15 +45,17 @@ begin
       WriteLn(s3.GetCompoundMessage);
       // s3 is not created as Singleton, so after use it I must free it
       s3.Free;
+
       // AddComponent with QualifiedClassName, a custom initializer, an alias.
       // Component will be created as singleton (single instance managed by Container)
-      DIContainer.AddComponent(
-        DIContainerUtils.GetQualifiedClassName(TService6),
-        function: TObject
-        begin
-          Result := TService6.Create(TService1.Create, TService1.Create);
-        end,
-        'srv6',
+
+      DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName
+          (TService6),
+          function: TObject
+          begin
+            Result := TService6.Create(DIContainer.Get(TService1) as TService1,DIContainer.Get(TService1) as TService1);
+          end,
+          'srv6',
         TDIContainerInitType.Singleton);
 
       s6 := DIContainer.Get('srv6') as TService6;
@@ -61,21 +65,17 @@ begin
 
       // AddComponent with QualifiedClassName, a custom initializer, an alias.
       // Component will be created as singleton (single instance managed by Container)
-      DIContainer.AddComponent(
-        DIContainerUtils.GetQualifiedClassName(TService7),
-        function: TObject
-        begin
-          Result := TService7.Create(TService1.Create, TService1.Create);
-        end,
-        'srv7intf',
-        TDIContainerInitType.Singleton);
+      DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName
+          (TService7),
+            function: TObject
+            begin
+              Result := TService7.Create(DIContainer.Get(TService1) as TService1,DIContainer.Get(TService1) as TService1);
+            end,
+            'srv7intf',
+          TDIContainerInitType.Singleton);
 
-      intf7 := DIContainer.GetInterfaceByAlias('srv7intf') as IInterfaceService6;
-//      intf7.SetMessage('Hello From Component');
-//      WriteLn(intf7.GetMessage);
-//      intf7 := nil;
-//      intf7 := DIContainer.GetInterfaceByAlias('srv7intf') as IInterfaceService6;
-      intf7 := nil;
+      s7 := DIContainer.Get('srv7intf') as TService7;
+      WriteLn(s7.ToString);
     finally
       DIContainer.Free;
     end;
@@ -83,5 +83,5 @@ begin
     on E: Exception do
       WriteLn(E.ClassName, E.Message);
   end;
-  readln;
+  // readln;
 end.

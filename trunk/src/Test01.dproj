@@ -64,6 +64,9 @@
 			</BuildConfiguration>
 		</ItemGroup>
 		<Import Project="$(BDS)\Bin\CodeGear.Delphi.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')"/>
+		<PropertyGroup>
+			<PostBuildEvent><![CDATA[$(OUTPUTDIR)DCTD_cmd.exe ..\src\DCTC.xml]]></PostBuildEvent>
+		</PropertyGroup>
 		<ProjectExtensions>
 			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
 			<Borland.ProjectType/>

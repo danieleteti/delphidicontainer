@@ -1,0 +1,22 @@
+div#header{display:inline}
+div#content{margin:0px;border-top:4px solid #666;border-left:4px solid #666;border-right:2px solid #666;border-bottom:2px solid #666;background:#fffff7;}
+div#toolbar{width:100%;margin:0;padding:0;border-top:0;border-left:0;border-right:0;border-bottom:0;background:#99CCFF;}
+.Table2Column{width:100%;padding:0px 0px 0px 0px;border-width:0px 0px 0px 0px;background-color:Black;margin:0px 0px 0px 0px;}
+.RowBorder{padding:0px 0px 0px 0px;border-width:0px 0px 0px 0px;background-color:White;}
+.tabletab{width:10px;}
+.TableNameAndDescription{width:100%;}
+.TdFirstColumn{width:33%;}
+.TrItem{padding:0px 0px 0px 0px;border-width:0px 0px 0px 0px;background-color:White;margin:0px 0px 0px 0px;border:1px dotted Green;}
+.toolbar{width:100%;border:0;padding:0;background:#99CCFF;}
+.simplesection{width:95%;border:0;padding:0;}
+.DescriptionSection{width:95%;border:0;padding:0;background:#FFFFCC;}
+h1{display:inline;background:#666;margin:10pt;padding:1pt;color:#ffffff;}
+.tableheader{font-size:large;background-color:#9F9F9F;}
+body{color:#070707;background-color:#ccc;margin:10px;padding:0;}
+.SectionName{color:#000000;font-weight:bold;}
+.Generated{color:#9900FF;font-family:Verdana,Arial,Helvetica,sans-serif;font-size:small;font-style:normal;font-weight:normal}
+.IndexName{color:#000000;background-color:#CCCCCC;}
+.Normal{color:#000000;}
+.Footer{color:#000000;font-family:Verdana,Arial,Helvetica,sans-serif;font-size:xx-small;font-style:normal;font-weight:normal}
+a:hover{color:#FF0000;text-decoration:underline}
+.DescriptionItem{width:100%;border:1px Black solid;}
