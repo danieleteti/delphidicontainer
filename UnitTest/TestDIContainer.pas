@@ -54,7 +54,7 @@ type
     procedure TestAddComponentWithAlias;
     procedure TestGetComponentByWrongAlias;
     procedure TestGetComponentByAliasAlreadyUsed;
-    procedure TestGetComponentWithInterface;
+//    procedure TestGetComponentWithInterface;
     procedure TestRecursiveDependence;
     procedure TestSameServiceInConstructor;
     procedure TestInitializationBlock;
@@ -186,13 +186,13 @@ begin
     (TService2, TDIContainerInitType.Singleton).SetAlias(TService1, 'service01').SetAlias(TService2, 'service01');
 end;
 
-procedure TestContainer.TestGetComponentWithInterface;
-begin
-  DIContainer.AddComponent(TInterfacedService1).SetAlias(TInterfacedService1, 'myintf1').AddComponent
-    (TInterfacedService2).SetAlias(TInterfacedService2, 'myintf2');
-  CheckNotNull(DIContainer.GetInterfaceByAlias('myintf1'));
-  CheckNotNull(DIContainer.GetInterfaceByAlias('myintf2'));
-end;
+//procedure TestContainer.TestGetComponentWithInterface;
+//begin
+//  DIContainer.AddComponent(TInterfacedService1).SetAlias(TInterfacedService1, 'myintf1').AddComponent
+//    (TInterfacedService2).SetAlias(TInterfacedService2, 'myintf2');
+//  CheckNotNull(DIContainer.GetInterfaceByAlias('myintf1'));
+//  CheckNotNull(DIContainer.GetInterfaceByAlias('myintf2'));
+//end;
 
 procedure TestContainer.TestGetDependentObject;
 var
@@ -264,13 +264,14 @@ end;
 
 procedure TestContainer.TestLoadConfiguration;
 var
-  intf: IInterfaceService1;
+  service: TInterfacedService1;
 begin
   DIContainer.LoadConfiguration('container.conf');
-  intf := DIContainer.GetInterfaceByAlias('myservice') as IInterfaceService1;
-  CheckNotNull(intf);
-  intf.SetMessage('hello');
-  CheckEquals('hello', intf.GetMessage);
+  service := DIContainer.Get('myservice') as TInterfacedService1;
+  CheckNotNull(service);
+  service.SetMessage('hello');
+  CheckEquals('hello', service.GetMessage);
+  service.Free;
 end;
 
 initialization

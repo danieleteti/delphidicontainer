@@ -28,14 +28,14 @@ unit ServiceTestObjectsU;
 interface
 
 type
-  IInterfaceService1 = interface
-  ['{C17AB2A5-63E6-40B8-9BDC-F31B76BE2361}']
-    function GetMessage: String;
-    procedure SetMessage(Value: String);
-    function ObjectClassName: String;
-  end;
+//  IInterfaceService1 = interface
+//  ['{C17AB2A5-63E6-40B8-9BDC-F31B76BE2361}']
+//    function GetMessage: String;
+//    procedure SetMessage(Value: String);
+//    function ObjectClassName: String;
+//  end;
 
-  TInterfacedService1 = class(TInterfacedObject, IInterfaceService1)
+  TInterfacedService1 = class(TObject)
   private
     FMessage: String;
   public
@@ -46,7 +46,7 @@ type
     class procedure Register;
   end;
 
-  TAnotherInterfacedService1 = class(TInterfacedObject, IInterfaceService1)
+  TAnotherInterfacedService1 = class(TObject)
   private
     FMessage: String;
   public
@@ -66,7 +66,7 @@ type
 
   IInterfaceService6 = IInterfaceService2;
 
-  TInterfacedService2 = class(TInterfacedObject, IInterfaceService2)
+  TInterfacedService2 = class(TObject)
   private
     FMessage: String;
   public
@@ -120,7 +120,7 @@ type
     constructor Create(Service4: TService4);
   end;
 
-  TService6 = class(TInterfacedObject, IInterfaceService6)
+  TService6 = class(TObject)
   private
     FMessage: string;
     s1: TService1;
@@ -266,8 +266,6 @@ end;
 
 destructor TService6.Destroy;
 begin
-  s1.Free;
-  s2.Free;
   inherited;
 end;
 
