@@ -8,11 +8,10 @@ uses
 
 type
   TForm2 = class(TForm)
-    Button1: TButton;
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
-    procedure Button1Click(Sender: TObject);
+    Memo1: TMemo;
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -31,41 +30,20 @@ uses DataService, IoUtils;
 
 {$R *.dfm}
 
-procedure TForm2.Button1Click(Sender: TObject);
-var
-  ds: TDataService;
-begin
-//  ds := TCSVDataService.Create('danieleutf8');
-//  try
-//    ds.Add(['value1', 'value2']);
-//    ds.Add(['value3', 'value4']);
-//    ds.Add(['value5', 'value6']);
-//  finally
-//    ds.Free;
-//  end;
-//
-//  ds := TPaddedDataService.Create('danieleansi');
-//  try
-//    ds.Add(['value1', 'value2']);
-//    ds.Add(['value3', 'value4']);
-//    ds.Add(['value5', 'value6']);
-//  finally
-//    ds.Free;
-//  end;
-end;
-
 procedure TForm2.Button2Click(Sender: TObject);
 var
   ds: TDataService;
+const
+  DATAFILE = 'datafile.dat';
 begin
   ShowMessage('Retrieving "dataservice" service fom DIContainer');
-  ds := DIContainer.Get('DATAFILE.DAT') as TDataService;
+  ds := DIContainer.Get('dataservice') as TDataService;
   try
-    ds.Open('datafile');
+    ds.Open(DATAFILE);
     ds.Add(['value1', 'value2']);
     ds.Add(['value3', 'value4']);
     ds.Add(['value5', 'value6']);
-    ShowMessage('All data are been written in "DATAFILE.DAT" file');
+    ShowMessage('All data are been written in "' + DATAFILE + '" file');
   finally
     ds.Free;
   end;
@@ -77,7 +55,11 @@ var
   s: string;
 begin
   FreeAndNil(DIContainer);
+  //DIContainer still doesn't provide a standard configuration file syntax.
+  //so for this example I'm using a simple file with one row containing
+  //fully qualified name for the class used as service
   s := TFile.ReadAllText(ChangeFileExt(Application.ExeName, '.config'));
+  Caption := 'Actual Config: ' + s;
   DIContainer := TDIContainer.Create;
   DIContainer.AddComponent(s, 'dataservice', TDIContainerInitType.CreateNewInstance);
 end;
