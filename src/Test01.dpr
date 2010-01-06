@@ -2,7 +2,6 @@ program Test01;
 {$APPTYPE CONSOLE}
 
 uses
-  FastMM4,
   SysUtils,
   DIContainer in 'DIContainer.pas',
   ServiceTestObjectsU in '..\UnitTest\ServiceTestObjectsU.pas';
@@ -15,7 +14,6 @@ var
   s6: TService6;
   s7: TService7;
 begin
-  ReportMemoryLeaksOnShutdown := True;
   try
     DIContainer := TDIContainer.Create;
     try
@@ -83,5 +81,5 @@ begin
     on E: Exception do
       WriteLn(E.ClassName, E.Message);
   end;
-  // readln;
+  readln;
 end.
