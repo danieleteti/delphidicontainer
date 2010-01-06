@@ -128,7 +128,7 @@ type
   public
     constructor Create(Service1A, Service1B: TService1);
     destructor Destroy; override;
-    function ToString: String;
+    function ToString: String; override;
     function GetMessage: string;
     procedure SetMessage(Value: string);
   end;
