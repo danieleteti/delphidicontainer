@@ -3,7 +3,7 @@
 			<ProjectGuid>{556BD130-CB4B-4581-8177-25F3AAF8D55E}</ProjectGuid>
 		</PropertyGroup>
 		<ItemGroup>
-			<Projects Include="src\Test01.dproj">
+			<Projects Include="test\01\Test01.dproj">
 				<Dependencies/>
 			</Projects>
 			<Projects Include="test\02\Test02.dproj">
@@ -21,13 +21,13 @@
 			</BorlandProject>
 		</ProjectExtensions>
 		<Target Name="Test01">
-			<MSBuild Projects="src\Test01.dproj"/>
+			<MSBuild Projects="test\01\Test01.dproj"/>
 		</Target>
 		<Target Name="Test01:Clean">
-			<MSBuild Targets="Clean" Projects="src\Test01.dproj"/>
+			<MSBuild Targets="Clean" Projects="test\01\Test01.dproj"/>
 		</Target>
 		<Target Name="Test01:Make">
-			<MSBuild Targets="Make" Projects="src\Test01.dproj"/>
+			<MSBuild Targets="Make" Projects="test\01\Test01.dproj"/>
 		</Target>
 		<Target Name="Test02">
 			<MSBuild Projects="test\02\Test02.dproj"/>
