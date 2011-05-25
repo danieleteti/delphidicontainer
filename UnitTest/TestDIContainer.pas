@@ -29,7 +29,6 @@ interface
 
 uses
   TestFramework,
-  IOCContainer,
   Types,
   Generics.Collections,
   TypInfo,
@@ -96,7 +95,7 @@ var
   s1, s2: TService1;
 begin
   DIContainer.AddComponent(
-    ContainerUtils.GetQualifiedClassName(TService1),
+    DIContainerUtils.GetQualifiedClassName(TService1),
     TDIContainerInitType.CreateNewInstance);
   s1 := DIContainer.GetComponent(TService1) as TService1;
   s2 := DIContainer.GetComponent(TService1) as TService1;
@@ -109,7 +108,7 @@ procedure TestContainer.TestRegisterComponentSingleton;
 var
   s1, s2: TService1;
 begin
-  DIContainer.AddComponent(ContainerUtils.GetQualifiedClassName(TService1), TDIContainerInitType.Singleton);
+  DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName(TService1), TDIContainerInitType.Singleton);
   s1 := DIContainer.GetComponent(TService1) as TService1;
   s2 := DIContainer.GetComponent(TService1) as TService1;
   CheckTrue(s1 = s2);
@@ -176,7 +175,7 @@ begin
   ExpectedException := EDIContainer;
   DIContainer.AddComponent(TService1, TDIContainerInitType.Singleton).AddComponent
     (TService2, TDIContainerInitType.Singleton).SetAlias(TService1, 'service01').SetAlias
-    (TService2, ContainerUtils.GetQualifiedClassName(TService1))
+    (TService2, DIContainerUtils.GetQualifiedClassName(TService1))
 end;
 
 procedure TestContainer.TestGetComponentByWrongAlias;
@@ -222,7 +221,7 @@ var
   srv1, srv2: TService1;
 begin
   DIContainer.AddComponent(
-    ContainerUtils.GetQualifiedClassName(TService1),
+    DIContainerUtils.GetQualifiedClassName(TService1),
     function: TObject
     begin
       Result := TService1.Create;
@@ -230,7 +229,7 @@ begin
     '',
     TDIContainerInitType.CreateNewInstance
     );
-  DIContainer.SetAlias(ContainerUtils.GetQualifiedClassName(TService1), 'service1');
+  DIContainer.SetAlias(DIContainerUtils.GetQualifiedClassName(TService1), 'service1');
   srv1 := DIContainer.GetComponentByAlias('service1') as TService1;
   CheckIs(srv1, TService1);
   srv2 := DIContainer.GetComponentByAlias('service1') as TService1;
@@ -245,7 +244,7 @@ var
   srv1, srv2: TService1;
 begin
   DIContainer.AddComponent(
-    ContainerUtils.GetQualifiedClassName(TService1),
+    DIContainerUtils.GetQualifiedClassName(TService1),
     function: TObject
     begin
       Result := TService1.Create;
@@ -254,7 +253,7 @@ begin
     '',
     TDIContainerInitType.Singleton
     );
-  DIContainer.SetAlias(ContainerUtils.GetQualifiedClassName(TService1), 'service1');
+  DIContainer.SetAlias(DIContainerUtils.GetQualifiedClassName(TService1), 'service1');
   srv1 := DIContainer.GetComponentByAlias('service1') as TService1;
   CheckIs(srv1, TService1);
   srv2 := DIContainer.GetComponentByAlias('service1') as TService1;
