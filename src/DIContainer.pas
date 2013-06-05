@@ -141,9 +141,6 @@ type
 
 implementation
 
-uses
-  Windows;
-
 { Container }
 
 function TDIContainer.AddComponent(AClass: TClass;
@@ -181,7 +178,7 @@ function TDIContainer.InternalGetComponent(AList: TList<string>;
 var
   ContType: TDIContainerItem;
 begin
-  OutputDebugString(PChar('Getting: ' + AQualifiedClassName));
+  //OutputDebugString(PChar('Getting: ' + AQualifiedClassName));
   if FClasses.ContainsKey(AQualifiedClassName) then
   begin
     ContType := FClasses[AQualifiedClassName];
