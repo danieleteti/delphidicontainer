@@ -1,9 +1,9 @@
-//@author Daniele Teti - http://www.danieleteti.it
-//@version 0.1
+// @author Daniele Teti - http://www.danieleteti.it
+// @version 0.2
 
 { @license
   **************************************************************
-  Copyright (c) <2009> <Daniele Teti>
+  Copyright (c) <2009-2011> <Daniele Teti>
 
   Permission is hereby granted, free of charge, to any person
   obtaining a copy of this software and associated documentation
@@ -43,16 +43,16 @@ uses
   SyncObjs;
 
 type
-  //Specific DIContainer Exception
+  // Specific DIContainer Exception
   EDIContainer = class(Exception)
   end;
 
-  {Kind of Initialiazation type.
-   Singleton: Every service is created only one and will be freed by DIContainer
-   CreateNewInstance: Every call create new object}
+  { Kind of Initialiazation type.
+    Singleton: Every service is created only one and will be freed by DIContainer
+    CreateNewInstance: Every call create new object }
   TDIContainerInitType = (Singleton, CreateNewInstance);
 
-  //Internal Container item class containing every information and code about services
+  // Internal Container item class containing every information and code about services
   TDIContainerItem = class
   private
     procedure SetCustomInitializationBlock(const Value: TFunc<TObject>);
@@ -67,14 +67,14 @@ type
       AInitializationBlock: TFunc<TObject>);
     destructor Destroy; override;
     property CustomInitializationBlock
-      : TFunc<TObject>read FCustomInitializationBlock write
+      : TFunc<TObject> read FCustomInitializationBlock write
       SetCustomInitializationBlock;
     property SingletonInstance: TObject read FSingletonInstance write
       SetSingletonInstance;
     property InitType: TDIContainerInitType read FInitType write SetInitType;
   end;
 
-  //The Container where you suld register (AddComponent) and retrieve (Get*) your service
+  // The Container where you should register (AddComponent) and retrieve (Get*) your service
   TDIContainer = class
   private
     cs: TCriticalSection;
@@ -102,27 +102,29 @@ type
 
     function AddComponent(AQualifiedClassName: String; AAlias: String;
       AContainerInitType: TDIContainerInitType =
-        TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
+      TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
 
     function AddComponent(AQualifiedClassName: String;
       AContainerInitType: TDIContainerInitType =
-        TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
+      TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
 
     function AddComponent(AClass: TClass;
       AContainerInitType: TDIContainerInitType =
-        TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
+      TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
 
     function AddComponent(AQualifiedClassName: String;
       AnInitializationBlock: TFunc<TObject>; AAlias: String = '';
       AContainerInitType: TDIContainerInitType =
-        TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
+      TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
 
     function AddComponent(AClass: TClass; AAlias: String;
       AContainerInitType: TDIContainerInitType =
-        TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
-    //Return a component as TObject.
+      TDIContainerInitType.CreateNewInstance): TDIContainer; overload;
+    // Return a component as TObject.
     function Get(AAlias: String): TObject; overload;
+    function Get<T: class>(AAlias: String): T; overload;
     function Get(AClass: TClass): TObject; overload;
+    function Get<T: class>: T; overload;
     function GetComponentByAlias(AAlias: String): TObject;
     function GetComponent(AClass: TClass): TObject; overload;
     function GetComponent(AQualifiedClassName: String): TObject; overload;
@@ -132,7 +134,7 @@ type
   { @description Utils methods }
   DIContainerUtils = class
     {
-     @description QualifiedClassName from class name
+      @description QualifiedClassName from class name
     }
     class function GetQualifiedClassName(AClass: TClass): String;
   end;
@@ -267,6 +269,11 @@ begin
   end;
 end;
 
+function TDIContainer.Get<T>(AAlias: String): T;
+begin
+  Result := Get(AAlias) as T;
+end;
+
 function TDIContainer.Get(AAlias: String): TObject;
 begin
   Result := GetComponentByAlias(AAlias);
@@ -275,6 +282,11 @@ end;
 function TDIContainer.Get(AClass: TClass): TObject;
 begin
   Result := GetComponent(AClass);
+end;
+
+function TDIContainer.Get<T>: T;
+begin
+  Result := GetComponent(ctx.GetType(T.ClassInfo).QualifiedName) as T;
 end;
 
 function TDIContainer.GetComponent(AQualifiedClassName: String): TObject;
@@ -381,11 +393,12 @@ function TDIContainer.SetAlias(AQualifiedClassName, AAlias: String)
 begin
   if FClasses.ContainsKey(AQualifiedClassName) and
     (not FClasses.ContainsKey(AAlias) and (not FComponentAliases.ContainsKey
-        (AAlias))) then
+    (AAlias))) then
     FComponentAliases.Add(AAlias, AQualifiedClassName)
   else
     raise EDIContainer.CreateFmt(
-      'Alias [%s] is already used or is the same name of a service QualifiedClassName', [AAlias]);
+      'Alias [%s] is already used or is the same name of a service QualifiedClassName',
+      [AAlias]);
   Result := Self;
 end;
 
@@ -455,7 +468,7 @@ begin
         raise EDIContainer.CreateFmt(
           'Singleton service [%s] still had [%d] references, cannot free it',
           [DIContainerUtils.GetQualifiedClassName
-            (FSingletonInstance.ClassType),
+          (FSingletonInstance.ClassType),
           TInterfacedObject(FSingletonInstance).RefCount]);
     end
     else
