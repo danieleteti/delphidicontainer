@@ -1,27 +1,27 @@
-{**************************************************************
- Copyright (c) <2009> <Daniele Teti>
+{ **************************************************************
+  Copyright (c) <2009-2011> <Daniele Teti>
 
- Permission is hereby granted, free of charge, to any person
- obtaining a copy of this software and associated documentation
- files (the "Software"), to deal in the Software without
- restriction, including without limitation the rights to use,
- copy, modify, merge, publish, distribute, sublicense, and/or sell
- copies of the Software, and to permit persons to whom the
- Software is furnished to do so, subject to the following
- conditions:
+  Permission is hereby granted, free of charge, to any person
+  obtaining a copy of this software and associated documentation
+  files (the "Software"), to deal in the Software without
+  restriction, including without limitation the rights to use,
+  copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the
+  Software is furnished to do so, subject to the following
+  conditions:
 
- The above copyright notice and this permission notice shall be
- included in all copies or substantial portions of the Software.
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- OTHER DEALINGS IN THE SOFTWARE.
-****************************************************************}
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+  OTHER DEALINGS IN THE SOFTWARE.
+  **************************************************************** }
 
 unit TestDIContainer;
 
@@ -49,11 +49,13 @@ type
     procedure TestRegisterComponentSingleton;
     procedure TestGetDependentObject;
     procedure TestGetServices;
+    procedure TestGetServicesViaGenerics;
     procedure TestGetComponentByAlias;
+    procedure TestGetComponentByAliasViaGenerics;
     procedure TestAddComponentWithAlias;
     procedure TestGetComponentByWrongAlias;
     procedure TestGetComponentByAliasAlreadyUsed;
-//    procedure TestGetComponentWithInterface;
+    // procedure TestGetComponentWithInterface;
     procedure TestRecursiveDependence;
     procedure TestSameServiceInConstructor;
     procedure TestInitializationBlock;
@@ -108,7 +110,8 @@ procedure TestContainer.TestRegisterComponentSingleton;
 var
   s1, s2: TService1;
 begin
-  DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName(TService1), TDIContainerInitType.Singleton);
+  DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName(TService1),
+    TDIContainerInitType.Singleton);
   s1 := DIContainer.GetComponent(TService1) as TService1;
   s2 := DIContainer.GetComponent(TService1) as TService1;
   CheckTrue(s1 = s2);
@@ -144,8 +147,10 @@ begin
   // service3 is not managed by DIContainer becouse it's not a TDIContainerInitType.Singleton
   srv3 := DIContainer.GetComponentByAlias('service03') as TService3;
   try
-    CheckEquals('TService1', DIContainer.GetComponentByAlias('service01').ClassName);
-    CheckEquals('TService2', DIContainer.GetComponentByAlias('service02').ClassName);
+    CheckEquals('TService1', DIContainer.GetComponentByAlias('service01')
+      .ClassName);
+    CheckEquals('TService2', DIContainer.GetComponentByAlias('service02')
+      .ClassName);
     CheckEquals('TService3', srv3.ClassName);
   finally
     srv3.Free;
@@ -157,13 +162,36 @@ var
   srv3: TService3;
 begin
   DIContainer.AddComponent(TService1, TDIContainerInitType.Singleton).AddComponent
-    (TService2, TDIContainerInitType.Singleton).AddComponent(TService3).SetAlias(TService1, 'service01').SetAlias
+    (TService2, TDIContainerInitType.Singleton).AddComponent(TService3)
+    .SetAlias(TService1, 'service01').SetAlias
     (TService2, 'service02').SetAlias(TService3, 'service03');
   // service3 is not managed by DIContainer becouse it's not a TDIContainerInitType.Singleton
   srv3 := DIContainer.GetComponentByAlias('service03') as TService3;
   try
-    CheckEquals('TService1', DIContainer.GetComponentByAlias('service01').ClassName);
-    CheckEquals('TService2', DIContainer.GetComponentByAlias('service02').ClassName);
+    CheckEquals('TService1', DIContainer.GetComponentByAlias('service01')
+      .ClassName);
+    CheckEquals('TService2', DIContainer.GetComponentByAlias('service02')
+      .ClassName);
+    CheckEquals('TService3', srv3.ClassName);
+  finally
+    srv3.Free;
+  end;
+end;
+
+procedure TestContainer.TestGetComponentByAliasViaGenerics;
+var
+  srv3: TService3;
+  srv: TService1;
+begin
+  DIContainer.AddComponent(TService1, TDIContainerInitType.Singleton).AddComponent
+    (TService2, TDIContainerInitType.Singleton).AddComponent(TService3)
+    .SetAlias(TService1, 'service01').SetAlias
+    (TService2, 'service02').SetAlias(TService3, 'service03');
+  // service3 is not managed by DIContainer because it's not a TDIContainerInitType.Singleton
+  srv3 := DIContainer.GetComponentByAlias('service03') as TService3;
+  try
+    CheckEquals('TService1', DIContainer.Get<TService1>('service01').ClassName);
+    CheckEquals('TService2', DIContainer.Get<TService2>('service02').ClassName);
     CheckEquals('TService3', srv3.ClassName);
   finally
     srv3.Free;
@@ -174,7 +202,8 @@ procedure TestContainer.TestGetComponentByAliasAlreadyUsed;
 begin
   ExpectedException := EDIContainer;
   DIContainer.AddComponent(TService1, TDIContainerInitType.Singleton).AddComponent
-    (TService2, TDIContainerInitType.Singleton).SetAlias(TService1, 'service01').SetAlias
+    (TService2, TDIContainerInitType.Singleton).SetAlias(TService1, 'service01')
+    .SetAlias
     (TService2, DIContainerUtils.GetQualifiedClassName(TService1))
 end;
 
@@ -182,16 +211,17 @@ procedure TestContainer.TestGetComponentByWrongAlias;
 begin
   ExpectedException := EDIContainer;
   DIContainer.AddComponent(TService1, TDIContainerInitType.Singleton).AddComponent
-    (TService2, TDIContainerInitType.Singleton).SetAlias(TService1, 'service01').SetAlias(TService2, 'service01');
+    (TService2, TDIContainerInitType.Singleton).SetAlias(TService1, 'service01')
+    .SetAlias(TService2, 'service01');
 end;
 
-//procedure TestContainer.TestGetComponentWithInterface;
-//begin
-//  DIContainer.AddComponent(TInterfacedService1).SetAlias(TInterfacedService1, 'myintf1').AddComponent
-//    (TInterfacedService2).SetAlias(TInterfacedService2, 'myintf2');
-//  CheckNotNull(DIContainer.GetInterfaceByAlias('myintf1'));
-//  CheckNotNull(DIContainer.GetInterfaceByAlias('myintf2'));
-//end;
+// procedure TestContainer.TestGetComponentWithInterface;
+// begin
+// DIContainer.AddComponent(TInterfacedService1).SetAlias(TInterfacedService1, 'myintf1').AddComponent
+// (TInterfacedService2).SetAlias(TInterfacedService2, 'myintf2');
+// CheckNotNull(DIContainer.GetInterfaceByAlias('myintf1'));
+// CheckNotNull(DIContainer.GetInterfaceByAlias('myintf2'));
+// end;
 
 procedure TestContainer.TestGetDependentObject;
 var
@@ -210,10 +240,23 @@ begin
   end;
 end;
 
+procedure TestContainer.TestGetServicesViaGenerics;
+var
+  srv: TService1;
+begin
+  CheckEquals(3, DIContainer.AddComponent(TService1).AddComponent(TService2)
+    .AddComponent(TService3)
+    .RegisteredComponents.Count);
+  srv := DIContainer.Get<TService1>;
+  CheckNotNull(srv);
+  srv.Free;
+end;
+
 procedure TestContainer.TestGetServices;
 begin
-  CheckEquals(3, DIContainer.AddComponent(TService1).AddComponent(TService2).AddComponent(TService3)
-      .RegisteredComponents.Count);
+  CheckEquals(3, DIContainer.AddComponent(TService1).AddComponent(TService2)
+    .AddComponent(TService3)
+    .RegisteredComponents.Count);
 end;
 
 procedure TestContainer.TestInitializationBlock;
@@ -229,7 +272,8 @@ begin
     '',
     TDIContainerInitType.CreateNewInstance
     );
-  DIContainer.SetAlias(DIContainerUtils.GetQualifiedClassName(TService1), 'service1');
+  DIContainer.SetAlias(DIContainerUtils.GetQualifiedClassName(TService1),
+    'service1');
   srv1 := DIContainer.GetComponentByAlias('service1') as TService1;
   CheckIs(srv1, TService1);
   srv2 := DIContainer.GetComponentByAlias('service1') as TService1;
@@ -253,7 +297,8 @@ begin
     '',
     TDIContainerInitType.Singleton
     );
-  DIContainer.SetAlias(DIContainerUtils.GetQualifiedClassName(TService1), 'service1');
+  DIContainer.SetAlias(DIContainerUtils.GetQualifiedClassName(TService1),
+    'service1');
   srv1 := DIContainer.GetComponentByAlias('service1') as TService1;
   CheckIs(srv1, TService1);
   srv2 := DIContainer.GetComponentByAlias('service1') as TService1;
