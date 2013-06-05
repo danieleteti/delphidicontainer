@@ -3,7 +3,7 @@
 
 { @license
   **************************************************************
-  Copyright (c) <2009-2011> <Daniele Teti>
+  Copyright (c) <2009-2013> <Daniele Teti>
 
   Permission is hereby granted, free of charge, to any person
   obtaining a copy of this software and associated documentation
