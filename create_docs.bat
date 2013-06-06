@@ -1,0 +1,1 @@
+.\bin\DCTD_cmd.exe .\src\DCTC.xml
