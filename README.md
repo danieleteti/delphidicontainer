@@ -24,15 +24,13 @@ begin
     try
       // AddComponent with TClass with and   InitType = Singleton
       DIContainer.AddComponent(TService1, TDIContainerInitType.Singleton);
+      
       // AddComponent with QualifiedName and InitType = Singleton
-      DIContainer.AddComponent('ServiceTestObjectsU.TService2',
-        TDIContainerInitType.Singleton);
+      DIContainer.AddComponent('ServiceTestObjectsU.TService2', TDIContainerInitType.Singleton);
       // AddComponent with QualifiedName and InitType = CreateNewInstance
-      DIContainer.AddComponent('ServiceTestObjectsU.TService3',
-        TDIContainerInitType.CreateNewInstance);
+      DIContainer.AddComponent('ServiceTestObjectsU.TService3', TDIContainerInitType.CreateNewInstance);
       // GetComponent with QualifiedName
-      s1 := DIContainer.GetComponent('ServiceTestObjectsU.TService1')
-        as TService1;
+      s1 := DIContainer.GetComponent('ServiceTestObjectsU.TService1') as TService1;
       s1.Message := 'I''m the first message';
       WriteLn(s1.Message);
 
@@ -42,8 +40,7 @@ begin
       WriteLn(s2.Message);
 
       // GetComponent with a dependent service (TService3 depends upon TService1 and TService2)
-      s3 := DIContainer.GetComponent('ServiceTestObjectsU.TService3')
-        as TService3;
+      s3 := DIContainer.GetComponent('ServiceTestObjectsU.TService3') as TService3;
       WriteLn(s3.GetCompoundMessage);
       // s3 is not created as Singleton, so after use it I must free it
       s3.Free;
@@ -51,8 +48,7 @@ begin
       // AddComponent with QualifiedClassName, a custom initializer, an alias.
       // Component will be created as singleton (single instance managed by Container)
 
-      DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName
-          (TService6),
+      DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName(TService6),
           function: TObject
           begin
             Result := TService6.Create(DIContainer.Get(TService1) as TService1,DIContainer.Get(TService1) as TService1);
@@ -67,8 +63,7 @@ begin
 
       // AddComponent with QualifiedClassName, a custom initializer, an alias.
       // Component will be created as singleton (single instance managed by Container)
-      DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName
-          (TService7),
+      DIContainer.AddComponent(DIContainerUtils.GetQualifiedClassName(TService7),
             function: TObject
             begin
               Result := TService7.Create(DIContainer.Get(TService1) as TService1,DIContainer.Get(TService1) as TService1);
