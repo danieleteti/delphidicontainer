@@ -1,7 +1,7 @@
 # delphidicontainer
 A (simple) Delphi Dependency Injection Framework for Delphi 2010 or better on Windows and MacOSX.
 
-
+```delphi
         program Test01;
         {$APPTYPE CONSOLE}
         
@@ -87,3 +87,4 @@ A (simple) Delphi Dependency Injection Framework for Delphi 2010 or better on Wi
           end;
           // readln;
         end.
+```
